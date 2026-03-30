@@ -625,11 +625,46 @@ function App() {
             proposals={proposals}
             onRegisterProposal={handleAddProposal}
             onEditProposal={handleAddProposal}
-            onOpenLozaDMS={() => setCurrentView('loza-concrete')}
+            onOpenLozaDMS={() => setCurrentView('loza-select')}
           />
         );
-      case 'loza-concrete':
-        return <LozaConcreteApp onBack={() => setCurrentView('proposals')} />;
+      case 'loza-select':
+        return (
+          <div className="max-w-2xl mx-auto mt-20">
+            <button 
+              onClick={() => setCurrentView('proposals')}
+              className="flex items-center gap-2 text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] mb-8 transition-colors"
+            >
+              ← Back to Proposals
+            </button>
+            <h2 className="text-2xl font-bold text-[var(--foreground)] mb-2">Loza DMS</h2>
+            <p className="text-sm text-[var(--muted-foreground)] mb-8">Select a profile to create documents</p>
+            <div className="grid grid-cols-2 gap-6">
+              <button
+                onClick={() => setCurrentView('loza-isidro')}
+                className="glass-card text-left group cursor-pointer"
+              >
+                <div className="w-12 h-12 rounded-xl bg-stone-700 flex items-center justify-center mb-4 text-white text-lg font-bold">IL</div>
+                <h3 className="text-lg font-semibold text-[var(--foreground)] mb-1">Isidro Loza</h3>
+                <p className="text-xs text-[var(--muted-foreground)]">(310) 994-8152</p>
+                <p className="text-xs text-[var(--muted-foreground)] mt-3">Proposals, Invoices, Receipts & Terms</p>
+              </button>
+              <button
+                onClick={() => setCurrentView('loza-alan')}
+                className="glass-card text-left group cursor-pointer"
+              >
+                <div className="w-12 h-12 rounded-xl bg-stone-600 flex items-center justify-center mb-4 text-white text-lg font-bold">AK</div>
+                <h3 className="text-lg font-semibold text-[var(--foreground)] mb-1">Alan Kester</h3>
+                <p className="text-xs text-[var(--muted-foreground)]">(310) 977-4804</p>
+                <p className="text-xs text-[var(--muted-foreground)] mt-3">Proposals, Invoices, Receipts & Terms</p>
+              </button>
+            </div>
+          </div>
+        );
+      case 'loza-isidro':
+        return <LozaConcreteApp onBack={() => setCurrentView('loza-select')} profileKey="isidro" />;
+      case 'loza-alan':
+        return <LozaConcreteApp onBack={() => setCurrentView('loza-select')} profileKey="alan" />;
       case 'landing':
         return <LandingPage onEnter={() => setCurrentView('dashboard')} />;
       default:

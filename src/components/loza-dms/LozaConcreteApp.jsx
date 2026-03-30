@@ -1,30 +1,30 @@
 import React, { useState } from "react";
-import { 
-  ClipboardList, 
-  FileText, 
-  Receipt, 
-  CheckCircle2, 
-  ScrollText, 
-  Mail, 
-  Phone, 
-  MapPin, 
+import {
+  ClipboardList,
+  FileText,
+  Receipt,
+  CheckCircle2,
+  ScrollText,
+  Mail,
+  Phone,
+  MapPin,
   Shield,
   ArrowLeft
 } from "lucide-react";
-import { 
-  LOGO_CIRCLE, 
-  COMPANY 
+import {
+  LOGO_CIRCLE,
+  COMPANY
 } from "./constants";
-import { 
-  DocumentForm 
+import {
+  DocumentForm
 } from "./components";
 
 const NAV_TABS = [
-  { id: "proposal",       label: "Proposal",          icon: ClipboardList },
-  { id: "invoice-basic",  label: "Invoice (Basic)",   icon: FileText },
-  { id: "invoice",        label: "Invoice",           icon: Receipt },
-  { id: "receipt",        label: "Receipt",           icon: CheckCircle2 },
-  { id: "terms",          label: "Terms & Conditions", icon: ScrollText },
+  { id: "proposal", label: "Proposal", icon: ClipboardList },
+  { id: "invoice-basic", label: "Invoice (Basic)", icon: FileText },
+  { id: "invoice", label: "Invoice", icon: Receipt },
+  { id: "receipt", label: "Receipt", icon: CheckCircle2 },
+  { id: "terms", label: "Terms & Conditions", icon: ScrollText },
 ];
 
 export function LozaConcreteApp({ onBack }) {
@@ -59,9 +59,9 @@ export function LozaConcreteApp({ onBack }) {
 
           <nav className="flex-1 px-3 py-4 space-y-1">
             {NAV_TABS.map(tab => (
-              <button 
-                key={tab.id} 
-                onClick={() => setActiveTab(tab.id)} 
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
                 className={`w-full text-left px-4 py-2.5 rounded-xl text-sm transition-all flex items-center gap-3 ${activeTab === tab.id ? "bg-blue-600 text-white font-semibold shadow-md shadow-blue-900/10" : "text-stone-500 hover:text-stone-900 hover:bg-stone-100"}`}
               >
                 <tab.icon size={18} />
@@ -96,7 +96,7 @@ export function LozaConcreteApp({ onBack }) {
           <div className="bg-white border-b border-stone-200 px-8 py-4 flex items-center justify-between sticky top-0 z-10 no-print">
             <div className="flex items-center gap-4">
               {onBack && (
-                <button 
+                <button
                   onClick={onBack}
                   className="p-2 hover:bg-stone-100 rounded-full text-stone-400 hover:text-stone-600 transition-colors"
                   title="Back to Proposals"

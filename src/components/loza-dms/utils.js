@@ -33,12 +33,12 @@ export function emptyLineItem() {
   };
 }
 
-export function emptyDocument(type) {
+export function emptyDocument(type, company = COMPANY) {
   return {
     type,
     number: "",
     date: todayISO(),
-    supervisor: COMPANY.supervisor,
+    supervisor: company.supervisor,
     valid: "45 Days",
     billTo: { name: "", address: "", phone: "", fax: "", email: "" },
     serviceTo: { name: "", address: "", phone: "", fax: "", email: "" },
@@ -57,14 +57,15 @@ export function computeTotals(doc) {
 }
 
 // ─── Hook ─────────────────────────────────────────────────────
-export function useDocumentState(type) {
-  const [doc, setDoc] = useState(() => emptyDocument(type));
+export function useDocumentState(type, company = COMPANY) {
+  const [doc, setDoc] = useState(() => emptyDocument(type, company));
   const update = useCallback((key, value) => setDoc(d => ({ ...d, [key]: value })), []);
   const updateClient = useCallback((side, key, value) => setDoc(d => ({ ...d, [side]: { ...d[side], [key]: value } })), []);
   const updateLineItem = useCallback((id, key, value) => setDoc(d => ({ ...d, lineItems: d.lineItems.map(li => li.id === id ? { ...li, [key]: value } : li) })), []);
   const addLineItem = useCallback(() => setDoc(d => ({ ...d, lineItems: [...d.lineItems, emptyLineItem()] })), []);
   const removeLineItem = useCallback((id) => setDoc(d => ({ ...d, lineItems: d.lineItems.filter(li => li.id !== id) })), []);
-  const reset = useCallback(() => setDoc(emptyDocument(type)), [type]);
+  const reset = useCallback(() => setDoc(emptyDocument(type, company)), [type, company]);
   
   return { doc, update, updateClient, updateLineItem, addLineItem, removeLineItem, reset };
 }
+

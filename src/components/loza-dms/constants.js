@@ -63,18 +63,37 @@ export const TCS_SECTIONS = [
   },
 ];
 
-export const COMPANY = {
+const COMPANY_BASE = {
   name: "Loza Concrete, Inc.",
   division: "Landscape Construction Division",
   license: "CSLB #1081825",
   address: "2055 E 130th Street, Compton, CA 90222",
   officePhone: "(424) 338-3040",
-  mobilePhone: "(310) 994-8152",
   email: "lozaconcrete@gmail.com",
+};
+
+export const COMPANY_ISIDRO = {
+  ...COMPANY_BASE,
+  mobilePhone: "(310) 994-8152",
   supervisor: "ISIDRO",
   contact: "Isidro Loza",
   contactPhone: "(310) 994-8152",
 };
+
+export const COMPANY_ALAN = {
+  ...COMPANY_BASE,
+  mobilePhone: "(310) 977-4804",
+  supervisor: "ALAN",
+  contact: "Alan Kester",
+  contactPhone: "(310) 977-4804",
+};
+
+// Default export for backward compat
+export const COMPANY = COMPANY_ISIDRO;
+
+export function getCompanyProfile(profileKey) {
+  return profileKey === "alan" ? COMPANY_ALAN : COMPANY_ISIDRO;
+}
 
 export const DOC_LABELS = {
   proposal: "PROPOSAL",
