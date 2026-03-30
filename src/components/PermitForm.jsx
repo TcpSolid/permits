@@ -106,7 +106,6 @@ export const PermitForm = ({ permit, isCityForm = false, contractors = [], onSav
             <X size={20} />
           </Button>
         </div>
-
         <div className="px-8 py-6 max-h-[85vh] overflow-y-auto custom-scrollbar">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -222,7 +221,9 @@ export const PermitForm = ({ permit, isCityForm = false, contractors = [], onSav
                   </div>
                 </>
               )}
+            </div>
 
+            <div className="space-y-6">
               {!isCityForm && (
                 <>
                   <div className="md:col-span-2">
@@ -234,7 +235,7 @@ export const PermitForm = ({ permit, isCityForm = false, contractors = [], onSav
                     >
                       <option value="New">+ Register New Contractor</option>
                       {contractors.map(c => (
-                        <option key={c.name} value={c.name}>{c.name}</option>
+                        <option key={c.id || c.name} value={c.name}>{c.name}</option>
                       ))}
                     </select>
                   </div>

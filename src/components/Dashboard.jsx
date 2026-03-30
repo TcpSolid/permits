@@ -20,7 +20,7 @@ export const Dashboard = ({ permits, onAddPermit, onEditPermit, onDeletePermit }
           </h1>
           <p className="text-slate-600 dark:text-slate-400 mt-2 text-lg">Manage your contracting permits and renewals with precision.</p>
         </div>
-        <Button onClick={onAddPermit} className="group gap-2 px-6 py-3 h-fit shadow-primary-500/30">
+        <Button onClick={() => onAddPermit()} className="group gap-2 px-6 py-3 h-fit shadow-primary-500/30">
           <Plus size={20} className="group-hover:rotate-90 transition-transform duration-300" />
           New Permit
         </Button>

@@ -87,7 +87,7 @@ export const AllPermits = ({ permits, onAddPermit, onEditPermit, onDeletePermit 
           </h1>
           <p className="text-slate-600 dark:text-slate-400 mt-2 text-lg">Detailed view and management of your entire permit database.</p>
         </div>
-        <Button onClick={onAddPermit} className="group gap-2 px-6 py-3 h-fit">
+        <Button onClick={() => onAddPermit()} className="group gap-2 px-6 py-3 h-fit">
           <Plus size={20} className="group-hover:rotate-90 transition-transform duration-300" />
           Add Permit
         </Button>

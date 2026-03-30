@@ -4,11 +4,52 @@ import { AllPermits } from './components/AllPermits';
 import { CityPermits } from './components/CityPermits';
 import { Alerts } from './components/Alerts';
 import { PermitForm } from './components/PermitForm';
+import { ContractorForm } from './components/ContractorForm';
+import { Vendors } from './components/Vendors';
+import { VendorForm } from './components/VendorForm';
+import { Trucks } from './components/Trucks';
+import { TruckForm } from './components/TruckForm';
+import { TruckMaintenance } from './components/TruckMaintenance';
+import { MaintenanceForm } from './components/MaintenanceForm';
+import { Clients } from './components/Clients';
+import { ClientForm } from './components/ClientForm';
+import { Employees } from './components/Employees';
+import { EmployeeForm } from './components/EmployeeForm';
 import { LandingPage } from './components/LandingPage';
 import { Stats } from './components/Stats';
 import { ReportBuilder } from './components/ReportBuilder';
+import { Contractors } from './components/Contractors';
+import { Proposals } from './components/Proposals';
+import { ProposalForm } from './components/ProposalForm';
+import { LozaConcreteApp } from './components/loza-dms/LozaConcreteApp';
 import { calculateStatus, isWithinUrgentThreshold } from './utils/permitUtils';
-import { Shield, Settings, HelpCircle, Bell, LayoutDashboard, FileText, AlertCircle, Sun, Moon, BarChart2, ClipboardList } from 'lucide-react';
+import { 
+  LayoutDashboard, 
+  Plus, 
+  Building2, 
+  HelpCircle, 
+  FileText, 
+  HardHat, 
+  Settings, 
+  LogOut, 
+  Search, 
+  Menu, 
+  X, 
+  Bell, 
+  Sun, 
+  Moon,
+  BarChart3,
+  Store,
+  Shield,
+  AlertCircle,
+  ClipboardList,
+  BarChart2,
+  Truck, 
+  Wrench, 
+  Users, 
+  Contact,
+  FileSignature
+} from 'lucide-react';
 import { useTheme } from './context/ThemeContext';
 
 function App() {
@@ -17,26 +58,66 @@ function App() {
   const [permits, setPermits] = useState([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingPermit, setEditingPermit] = useState(null);
+  const [contractors, setContractors] = useState([]);
+  const [editingContractor, setEditingContractor] = useState(null);
+  const [vendors, setVendors] = useState([]);
+  const [editingVendor, setEditingVendor] = useState(null);
+  const [trucks, setTrucks] = useState([]);
+  const [editingTruck, setEditingTruck] = useState(null);
+  const [maintenance, setMaintenance] = useState([]);
+  const [editingMaintenance, setEditingMaintenance] = useState(null);
+  const [clients, setClients] = useState([]);
+  const [editingClient, setEditingClient] = useState(null);
+  const [employees, setEmployees] = useState([]);
+  const [editingEmployee, setEditingEmployee] = useState(null);
   const [isCityFormModal, setIsCityFormModal] = useState(false);
+  const [isContractorFormModal, setIsContractorFormModal] = useState(false);
+  const [isNewContractorModalOpen, setIsNewContractorModalOpen] = useState(false);
+  const [isVendorModalOpen, setIsVendorModalOpen] = useState(false);
+  const [isTruckModalOpen, setIsTruckModalOpen] = useState(false);
+  const [isMaintenanceModalOpen, setIsMaintenanceModalOpen] = useState(false);
+  const [isClientModalOpen, setIsClientModalOpen] = useState(false);
+  const [isEmployeeModalOpen, setIsEmployeeModalOpen] = useState(false);
+  const [proposals, setProposals] = useState([]);
+  const [editingProposal, setEditingProposal] = useState(null);
+  const [isProposalModalOpen, setIsProposalModalOpen] = useState(false);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Load permits from API on mount
   useEffect(() => {
-    const loadPermits = async () => {
+    const loadData = async () => {
       try {
-        const response = await fetch('/api/permits');
-        if (!response.ok) {
-          throw new Error(`Server responded with ${response.status}`);
+        const [permitsRes, contractorsRes, vendorsRes, trucksRes, maintenanceRes, clientsRes, employeesRes] = await Promise.all([
+          fetch('/api/permits'),
+          fetch('/api/contractors'),
+          fetch('/api/vendors'),
+          fetch('/api/trucks'),
+          fetch('/api/maintenance'),
+          fetch('/api/clients'),
+          fetch('/api/employees'),
+          fetch('/api/proposals')
+        ]);
+
+        if (!permitsRes.ok || !contractorsRes.ok || !vendorsRes.ok || !trucksRes.ok || !maintenanceRes.ok || !clientsRes.ok || !employeesRes.ok || !proposalsRes.ok) {
+          throw new Error('Server responded with an error');
         }
-        const data = await response.json();
+
+        const permitsData = await permitsRes.json();
+        const contractorsData = await contractorsRes.json();
+        const vendorsData = await vendorsRes.json();
+        const trucksData = await trucksRes.json();
+        const maintenanceData = await maintenanceRes.json();
+        const clientsData = await clientsRes.json();
+        const employeesData = await employeesRes.json();
+        const proposalsData = await proposalsRes.json();
         
-        if (!Array.isArray(data)) {
+        if (!Array.isArray(permitsData) || !Array.isArray(contractorsData) || !Array.isArray(vendorsData) || !Array.isArray(trucksData) || !Array.isArray(maintenanceData) || !Array.isArray(clientsData) || !Array.isArray(employeesData) || !Array.isArray(proposalsData)) {
           throw new Error('Server returned invalid data format');
         }
 
-        // If API is empty, check for legacy localStorage data to migrate
-        if (data.length === 0) {
+        // If permits API is empty, check for legacy localStorage data
+        if (permitsData.length === 0) {
           const saved = localStorage.getItem('permits');
           if (saved) {
             const legacyData = JSON.parse(saved);
@@ -44,22 +125,46 @@ function App() {
               console.log('Migrating legacy localStorage data to backend...');
               await saveToBackend(legacyData);
               setPermits(legacyData);
-              // Optionally clear localStorage after successful migration
-              // localStorage.removeItem('permits');
             }
           }
         } else {
-          setPermits(data);
+          setPermits(permitsData);
         }
+
+        // If contractors API is empty, derive from permits if possible
+        if (contractorsData.length === 0 && permitsData.length > 0) {
+          const derived = Array.from(new Map(permitsData.map(p => [p.contractorName, { 
+            id: Date.now().toString() + Math.random().toString(36).slice(2, 7),
+            name: p.contractorName, 
+            phone: p.contractorPhone, 
+            email: p.contractorEmail,
+            createdAt: new Date().toISOString()
+          }])).values()).filter(c => c.name);
+          
+          if (derived.length > 0) {
+            console.log('Populating contractors from existing permits...');
+            await saveContractorsToBackend(derived);
+            setContractors(derived);
+          }
+        } else {
+          setContractors(contractorsData);
+        }
+
+        setVendors(vendorsData);
+        setTrucks(trucksData);
+        setMaintenance(maintenanceData);
+        setClients(clientsData);
+        setEmployees(employeesData);
+        setProposals(proposalsData);
       } catch (err) {
-        console.error('Failed to load permits:', err);
+        console.error('Failed to load data:', err);
         setError('Failed to connect to backend server. Is it running?');
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadPermits();
+    loadData();
   }, []);
 
   const saveToBackend = async (data) => {
@@ -70,8 +175,99 @@ function App() {
         body: JSON.stringify(data),
       });
     } catch (err) {
-      console.error('Failed to save to backend:', err);
+      console.error('Failed to save permits:', err);
       setError('Connection lost! Your changes might not have been saved to disk.');
+    }
+  };
+
+  const saveContractorsToBackend = async (data) => {
+    try {
+      await fetch('/api/contractors', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+    } catch (err) {
+      console.error('Failed to save contractors:', err);
+      setError('Connection lost! Your contractor changes might not have been saved.');
+    }
+  };
+
+  const saveVendorsToBackend = async (data) => {
+    try {
+      await fetch('/api/vendors', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+    } catch (err) {
+      console.error('Failed to save vendors:', err);
+      setError('Connection lost! Your vendor changes might not have been saved.');
+    }
+  };
+
+  const saveTrucksToBackend = async (data) => {
+    try {
+      await fetch('/api/trucks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+    } catch (err) {
+      console.error('Failed to save trucks:', err);
+      setError('Connection lost! Your truck changes might not have been saved.');
+    }
+  };
+
+  const saveMaintenanceToBackend = async (data) => {
+    try {
+      await fetch('/api/maintenance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+    } catch (err) {
+      console.error('Failed to save maintenance:', err);
+      setError('Connection lost! Your maintenance changes might not have been saved.');
+    }
+  };
+
+  const saveClientsToBackend = async (data) => {
+    try {
+      await fetch('/api/clients', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+    } catch (err) {
+      console.error('Failed to save clients:', err);
+      setError('Connection lost! Your client changes might not have been saved.');
+    }
+  };
+
+  const saveEmployeesToBackend = async (data) => {
+    try {
+      await fetch('/api/employees', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+    } catch (err) {
+      console.error('Failed to save employees:', err);
+      setError('Connection lost! Your employee changes might not have been saved.');
+    }
+  };
+
+  const saveProposalsToBackend = async (data) => {
+    try {
+      await fetch('/api/proposals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+    } catch (err) {
+      console.error('Failed to save proposals:', err);
+      setError('Connection lost! Your proposal changes might not have been saved.');
     }
   };
 
@@ -102,12 +298,15 @@ function App() {
     }
   }, [permits, isLoading]);
 
-  const handleAddPermit = (initialCity = '') => {
-    setIsCityFormModal(initialCity !== '');
+  const handleAddPermit = (initialCity = '', isContractorOnly = false) => {
+    // Robust check: if called as an event handler, initialCity will be the event object
+    const city = typeof initialCity === 'string' ? initialCity : '';
+    setIsCityFormModal(city !== '');
+    setIsContractorFormModal(isContractorOnly === true); // Ensure boolean
     setEditingPermit({
-      type: '',
-      city: initialCity,
-      permitId: '',
+      type: isContractorOnly === true ? 'Contractor Registration' : '',
+      city: isContractorOnly === true ? 'N/A' : city,
+      permitId: isContractorOnly === true ? `REG-${Date.now().toString().slice(-4)}` : '',
       contractorName: '',
       contractorPhone: '',
       contractorEmail: '',
@@ -116,7 +315,8 @@ function App() {
       buildingDeptPhone: '',
       publicWorks: '',
       businessLicense: '',
-      isCityForm: initialCity !== '',
+      isCityForm: city !== '',
+      isContractorForm: isContractorOnly === true,
       submissionDate: new Date().toISOString().split('T')[0],
       expirationDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
     });
@@ -125,6 +325,7 @@ function App() {
 
   const handleEditPermit = (permit) => {
     setIsCityFormModal(!!permit.isCityForm);
+    setIsContractorFormModal(!!permit.isContractorForm);
     setEditingPermit(permit);
     setIsFormOpen(true);
   };
@@ -143,6 +344,183 @@ function App() {
     }
     setIsFormOpen(false);
     setEditingPermit(null);
+  };
+
+  const handleAddContractor = (contractor = null) => {
+    setEditingContractor(contractor);
+    setIsNewContractorModalOpen(true);
+  };
+
+  const handleSaveContractor = (contractorData) => {
+    let updatedContractors;
+    if (editingContractor) {
+      // Update existing contractor
+      updatedContractors = contractors.map(c => 
+        c.id === editingContractor.id ? { ...c, ...contractorData } : c
+      );
+    } else {
+      // Create new contractor
+      const newContractor = {
+        ...contractorData,
+        id: Date.now().toString(),
+        createdAt: new Date().toISOString()
+      };
+      updatedContractors = [...contractors, newContractor];
+    }
+    setContractors(updatedContractors);
+    saveContractorsToBackend(updatedContractors);
+    setIsNewContractorModalOpen(false);
+    setEditingContractor(null);
+  };
+
+  const handleAddVendor = (vendor = null) => {
+    setEditingVendor(vendor);
+    setIsVendorModalOpen(true);
+  };
+
+  const handleSaveVendor = (vendorData) => {
+    let updatedVendors;
+    if (editingVendor) {
+      updatedVendors = vendors.map(v => 
+        v.id === editingVendor.id ? { ...v, ...vendorData } : v
+      );
+    } else {
+      const newVendor = {
+        ...vendorData,
+        id: Date.now().toString(),
+        createdAt: new Date().toISOString()
+      };
+      updatedVendors = [...vendors, newVendor];
+    }
+    setVendors(updatedVendors);
+    saveVendorsToBackend(updatedVendors);
+    setIsVendorModalOpen(false);
+    setEditingVendor(null);
+  };
+
+  const handleAddTruck = (truck = null) => {
+    setEditingTruck(truck);
+    setIsTruckModalOpen(true);
+  };
+
+  const handleSaveTruck = (truckData) => {
+    let updatedTrucks;
+    if (editingTruck) {
+      updatedTrucks = trucks.map(t => 
+        t.id === editingTruck.id ? { ...t, ...truckData } : t
+      );
+    } else {
+      const newTruck = {
+        ...truckData,
+        id: Date.now().toString(),
+        createdAt: new Date().toISOString()
+      };
+      updatedTrucks = [...trucks, newTruck];
+    }
+    setTrucks(updatedTrucks);
+    saveTrucksToBackend(updatedTrucks);
+    setIsTruckModalOpen(false);
+    setEditingTruck(null);
+  };
+
+  const handleAddMaintenance = (record = null) => {
+    setEditingMaintenance(record);
+    setIsMaintenanceModalOpen(true);
+  };
+
+  const handleSaveMaintenance = (maintenanceData) => {
+    let updatedMaintenance;
+    if (editingMaintenance) {
+      updatedMaintenance = maintenance.map(m => 
+        m.id === editingMaintenance.id ? { ...m, ...maintenanceData } : m
+      );
+    } else {
+      const newRecord = {
+        ...maintenanceData,
+        id: Date.now().toString(),
+        createdAt: new Date().toISOString()
+      };
+      updatedMaintenance = [...maintenance, newRecord];
+    }
+    setMaintenance(updatedMaintenance);
+    saveMaintenanceToBackend(updatedMaintenance);
+    setIsMaintenanceModalOpen(false);
+    setEditingMaintenance(null);
+  };
+
+  const handleAddClient = (client = null) => {
+    setEditingClient(client);
+    setIsClientModalOpen(true);
+  };
+
+  const handleSaveClient = (clientData) => {
+    let updatedClients;
+    if (editingClient) {
+      updatedClients = clients.map(c => 
+        c.id === editingClient.id ? { ...c, ...clientData } : c
+      );
+    } else {
+      const newClient = {
+        ...clientData,
+        id: Date.now().toString(),
+        createdAt: new Date().toISOString()
+      };
+      updatedClients = [...clients, newClient];
+    }
+    setClients(updatedClients);
+    saveClientsToBackend(updatedClients);
+    setIsClientModalOpen(false);
+    setEditingClient(null);
+  };
+
+  const handleAddEmployee = (employee = null) => {
+    setEditingEmployee(employee);
+    setIsEmployeeModalOpen(true);
+  };
+
+  const handleSaveEmployee = (employeeData) => {
+    let updatedEmployees;
+    if (editingEmployee) {
+      updatedEmployees = employees.map(e => 
+        e.id === editingEmployee.id ? { ...e, ...employeeData } : e
+      );
+    } else {
+      const newEmployee = {
+        ...employeeData,
+        id: Date.now().toString(),
+        createdAt: new Date().toISOString()
+      };
+      updatedEmployees = [...employees, newEmployee];
+    }
+    setEmployees(updatedEmployees);
+    saveEmployeesToBackend(updatedEmployees);
+    setIsEmployeeModalOpen(false);
+    setEditingEmployee(null);
+  };
+
+  const handleAddProposal = (proposal = null) => {
+    setEditingProposal(proposal);
+    setIsProposalModalOpen(true);
+  };
+
+  const handleSaveProposal = (proposalData) => {
+    let updatedProposals;
+    if (editingProposal) {
+      updatedProposals = proposals.map(p => 
+        p.id === editingProposal.id ? { ...p, ...proposalData } : p
+      );
+    } else {
+      const newProposal = {
+        ...proposalData,
+        id: Date.now().toString(),
+        createdAt: new Date().toISOString()
+      };
+      updatedProposals = [...proposals, newProposal];
+    }
+    setProposals(updatedProposals);
+    saveProposalsToBackend(updatedProposals);
+    setIsProposalModalOpen(false);
+    setEditingProposal(null);
   };
 
   const alertCount = permits.filter(p => 
@@ -189,6 +567,69 @@ function App() {
         return <Stats permits={permits} />;
       case 'reports':
         return <ReportBuilder permits={permits} />;
+      case 'contractors':
+        return (
+          <Contractors 
+            permits={permits} 
+            contractors={contractors}
+            onEditPermit={handleEditPermit}
+            onDeletePermit={handleDeletePermit}
+            onRegisterContractor={handleAddContractor}
+            onEditContractor={handleAddContractor}
+          />
+        );
+      case 'vendors':
+        return (
+          <Vendors 
+            vendors={vendors}
+            onRegisterVendor={handleAddVendor}
+            onEditVendor={handleAddVendor}
+          />
+        );
+      case 'trucks':
+        return (
+          <Trucks 
+            trucks={trucks}
+            onRegisterTruck={handleAddTruck}
+            onEditTruck={handleAddTruck}
+          />
+        );
+      case 'maintenance':
+        return (
+          <TruckMaintenance 
+            maintenance={maintenance}
+            trucks={trucks}
+            onRegisterMaintenance={handleAddMaintenance}
+            onEditMaintenance={handleAddMaintenance}
+          />
+        );
+      case 'clients':
+        return (
+          <Clients 
+            clients={clients}
+            onRegisterClient={handleAddClient}
+            onEditClient={handleAddClient}
+          />
+        );
+      case 'employees':
+        return (
+          <Employees 
+            employees={employees}
+            onRegisterEmployee={handleAddEmployee}
+            onEditEmployee={handleAddEmployee}
+          />
+        );
+      case 'proposals':
+        return (
+          <Proposals 
+            proposals={proposals}
+            onRegisterProposal={handleAddProposal}
+            onEditProposal={handleAddProposal}
+            onOpenLozaDMS={() => setCurrentView('loza-concrete')}
+          />
+        );
+      case 'loza-concrete':
+        return <LozaConcreteApp onBack={() => setCurrentView('proposals')} />;
       case 'landing':
         return <LandingPage onEnter={() => setCurrentView('dashboard')} />;
       default:
@@ -223,18 +664,59 @@ function App() {
               onClick={() => setCurrentView('dashboard')}
             />
             <NavLink 
+              icon={FileSignature} 
+              label="Proposals" 
+              active={currentView === 'proposals'} 
+              onClick={() => setCurrentView('proposals')}
+            />
+            <NavLink 
               icon={FileText} 
               label="All Permits" 
               active={currentView === 'permits'} 
               onClick={() => setCurrentView('permits')}
             />
-            <button 
+            <NavLink 
+              icon={HardHat} 
+              label="Contractors" 
+              active={currentView === 'contractors'} 
+              onClick={() => setCurrentView('contractors')}
+            />
+            <NavLink 
+              icon={Building2} 
+              label="City Forms" 
+              active={currentView === 'city-permits'} 
               onClick={() => setCurrentView('city-permits')}
-              className={`w-full flex items-center gap-3 px-8 py-2 rounded-xl transition-all duration-200 group ${currentView === 'city-permits' ? 'text-primary-400 font-bold' : 'text-slate-500 hover:text-slate-300'}`}
-            >
-              <div className={`w-1.5 h-1.5 rounded-full ${currentView === 'city-permits' ? 'bg-primary-500 shadow-[0_0_8px_rgba(14,165,233,0.5)]' : 'bg-slate-600 opacity-40 group-hover:opacity-100'}`} />
-              <span className="text-sm font-medium hidden lg:block">City Forms</span>
-            </button>
+            />
+            <NavLink 
+              icon={Store} 
+              label="Vendors" 
+              active={currentView === 'vendors'} 
+              onClick={() => setCurrentView('vendors')}
+            />
+            <NavLink 
+              icon={Truck} 
+              label="Trucks" 
+              active={currentView === 'trucks'} 
+              onClick={() => setCurrentView('trucks')}
+            />
+            <NavLink 
+              icon={Wrench} 
+              label="Maintenance" 
+              active={currentView === 'maintenance'} 
+              onClick={() => setCurrentView('maintenance')}
+            />
+            <NavLink 
+              icon={Users} 
+              label="Clients" 
+              active={currentView === 'clients'} 
+              onClick={() => setCurrentView('clients')}
+            />
+            <NavLink 
+              icon={Contact} 
+              label="Employees" 
+              active={currentView === 'employees'} 
+              onClick={() => setCurrentView('employees')}
+            />
             <NavLink 
               icon={Bell} 
               label="Alerts" 
@@ -307,13 +789,97 @@ function App() {
         <PermitForm 
           permit={editingPermit} 
           isCityForm={isCityFormModal}
-          contractors={Array.from(new Map(permits.map(p => [p.contractorName, { 
-            name: p.contractorName, 
-            phone: p.contractorPhone, 
-            email: p.contractorEmail 
-          }])).values()).filter(c => c.name)}
+          isContractorForm={isContractorFormModal}
+          contractors={contractors}
           onSave={handleSavePermit} 
           onCancel={() => setIsFormOpen(false)} 
+        />
+      )}
+
+      {/* Contractor Selection Form */}
+      {isNewContractorModalOpen && (
+        <ContractorForm 
+          contractor={editingContractor}
+          onSave={handleSaveContractor}
+          onCancel={() => {
+            setIsNewContractorModalOpen(false);
+            setEditingContractor(null);
+          }}
+        />
+      )}
+
+      {/* Vendor Form Modal */}
+      {isVendorModalOpen && (
+        <VendorForm 
+          vendor={editingVendor}
+          onSave={handleSaveVendor}
+          onCancel={() => {
+            setIsVendorModalOpen(false);
+            setEditingVendor(null);
+          }}
+        />
+      )}
+
+      {/* Truck Form Modal */}
+      {isTruckModalOpen && (
+        <TruckForm 
+          truck={editingTruck}
+          onSave={handleSaveTruck}
+          onCancel={() => {
+            setIsTruckModalOpen(false);
+            setEditingTruck(null);
+          }}
+        />
+      )}
+
+      {/* Maintenance Form Modal */}
+      {isMaintenanceModalOpen && (
+        <MaintenanceForm 
+          record={editingMaintenance}
+          trucks={trucks}
+          onSave={handleSaveMaintenance}
+          onCancel={() => {
+            setIsMaintenanceModalOpen(false);
+            setEditingMaintenance(null);
+          }}
+        />
+      )}
+
+      {/* Client Form Modal */}
+      {isClientModalOpen && (
+        <ClientForm 
+          client={editingClient}
+          onSave={handleSaveClient}
+          onCancel={() => {
+            setIsClientModalOpen(false);
+            setEditingClient(null);
+          }}
+        />
+      )}
+
+      {/* Employee Form Modal */}
+      {isEmployeeModalOpen && (
+        <EmployeeForm 
+          employee={editingEmployee}
+          onSave={handleSaveEmployee}
+          onCancel={() => {
+            setIsEmployeeModalOpen(false);
+            setEditingEmployee(null);
+          }}
+        />
+      )}
+
+      {/* Proposal Form Modal */}
+      {isProposalModalOpen && (
+        <ProposalForm 
+          proposal={editingProposal}
+          clients={clients}
+          contractors={contractors}
+          onSave={handleSaveProposal}
+          onCancel={() => {
+            setIsProposalModalOpen(false);
+            setEditingProposal(null);
+          }}
         />
       )}
     </div>
