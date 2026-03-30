@@ -171,3 +171,45 @@
 .dark ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.2);
 }
+
+/* ─── Print Styles ────────────────────────────────────────────── */
+@media print {
+  /* Hide the main app sidebar */
+  aside {
+    display: none !important;
+  }
+
+  /* Hide elements marked as no-print */
+  .no-print {
+    display: none !important;
+  }
+
+  /* Remove backgrounds and decorative elements */
+  body {
+    background: white !important;
+    background-image: none !important;
+  }
+
+  /* Let main content fill the full page */
+  main {
+    margin-left: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Remove glass effects and shadows for clean printing */
+  .glass, .glass-card {
+    background: white !important;
+    backdrop-filter: none !important;
+    box-shadow: none !important;
+  }
+
+  .glass-card::before {
+    display: none !important;
+  }
+
+  /* Remove mesh gradient backgrounds */
+  .mesh-gradient {
+    background-image: none !important;
+  }
+}

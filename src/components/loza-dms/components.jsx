@@ -93,29 +93,30 @@ export function DocumentHeader({ doc, update }) {
   );
 }
 
+// ─── Client Block (extracted to avoid re-mount on every keystroke) ─────
+function ClientBlock({ side, title, data, updateClient }) {
+  return (
+    <div className="bg-stone-50 border border-stone-200 rounded-xl p-4">
+      <div className="text-[10px] uppercase tracking-[0.25em] font-bold text-blue-600 mb-3 pb-2 border-b border-stone-200">{title}</div>
+      <div className="space-y-3">
+        <Field label="Name"><input className={inputCls} value={data.name} onChange={e => updateClient(side, "name", e.target.value)} onKeyDown={handleEnter} placeholder="Client name" /></Field>
+        <Field label="Address"><input className={inputCls} value={data.address} onChange={e => updateClient(side, "address", e.target.value)} onKeyDown={handleEnter} placeholder="Street address" /></Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Phone"><input className={inputCls} value={data.phone} onChange={e => updateClient(side, "phone", e.target.value)} onKeyDown={handleEnter} placeholder="(000) 000-0000" /></Field>
+          <Field label="Fax"><input className={inputCls} value={data.fax ?? ""} onChange={e => updateClient(side, "fax", e.target.value)} onKeyDown={handleEnter} placeholder="(000) 000-0000" /></Field>
+        </div>
+        <Field label="Email"><input type="email" className={inputCls} value={data.email} onChange={e => updateClient(side, "email", e.target.value)} onKeyDown={handleEnter} placeholder="email@example.com" /></Field>
+      </div>
+    </div>
+  );
+}
+
 // ─── Client Section ───────────────────────────────────────────
 export function ClientSection({ doc, updateClient }) {
-  function Block({ side, title }) {
-    const data = doc[side];
-    return (
-      <div className="bg-stone-50 border border-stone-200 rounded-xl p-4">
-        <div className="text-[10px] uppercase tracking-[0.25em] font-bold text-blue-600 mb-3 pb-2 border-b border-stone-200">{title}</div>
-        <div className="space-y-3">
-          <Field label="Name"><input className={inputCls} value={data.name} onChange={e => updateClient(side, "name", e.target.value)} onKeyDown={handleEnter} placeholder="Client name" /></Field>
-          <Field label="Address"><input className={inputCls} value={data.address} onChange={e => updateClient(side, "address", e.target.value)} onKeyDown={handleEnter} placeholder="Street address" /></Field>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Phone"><input className={inputCls} value={data.phone} onChange={e => updateClient(side, "phone", e.target.value)} onKeyDown={handleEnter} placeholder="(000) 000-0000" /></Field>
-            <Field label="Fax"><input className={inputCls} value={data.fax ?? ""} onChange={e => updateClient(side, "fax", e.target.value)} onKeyDown={handleEnter} placeholder="(000) 000-0000" /></Field>
-          </div>
-          <Field label="Email"><input type="email" className={inputCls} value={data.email} onChange={e => updateClient(side, "email", e.target.value)} onKeyDown={handleEnter} placeholder="email@example.com" /></Field>
-        </div>
-      </div>
-    );
-  }
   return (
     <div className="grid grid-cols-2 gap-4 mb-5">
-      <Block side="billTo" title="Bill To" />
-      <Block side="serviceTo" title="Service To" />
+      <ClientBlock side="billTo" title="Bill To" data={doc.billTo} updateClient={updateClient} />
+      <ClientBlock side="serviceTo" title="Service To" data={doc.serviceTo} updateClient={updateClient} />
     </div>
   );
 }
