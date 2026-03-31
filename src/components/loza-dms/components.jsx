@@ -301,15 +301,17 @@ export function DocumentForm({ type, company = COMPANY }) {
     try {
       // Dynamic imports — these libraries work fine with oklch since the
       // browser's own rendering engine handles all CSS via SVG foreignObject
-      const { toPng } = await import("html-to-image");
-      const { default: jsPDF } = await import("jspdf");
+      const htmlToImage = await import("html-to-image");
+      const toPng = htmlToImage.toPng || htmlToImage.default?.toPng;
+      const jsPDFModule = await import("jspdf");
+      const jsPDF = jsPDFModule.jsPDF || jsPDFModule.default?.jsPDF || jsPDFModule.default;
 
       const element = printRef.current;
 
       // Build filename from document metadata
-      const docLabel = DOC_LABELS[type] || type;
-      const clientName = doc.billTo?.name?.trim();
-      const docNumber = doc.number?.trim();
+      const docLabel = String(DOC_LABELS[type] || type || "Document");
+      const clientName = String(doc.billTo?.name ?? "").trim();
+      const docNumber = String(doc.number ?? "").trim();
       const parts = ["Loza_Concrete", docLabel.replace(/\s+/g, "_")];
       if (clientName) parts.push(clientName.replace(/\s+/g, "_"));
       if (docNumber) parts.push(docNumber);
@@ -321,6 +323,7 @@ export function DocumentForm({ type, company = COMPANY }) {
         pixelRatio: 2,
         cacheBust: true,
         skipAutoScale: true,
+        skipFonts: true,
         backgroundColor: "#ffffff",
       });
 
