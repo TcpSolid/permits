@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Save, Truck, Hash, Calendar, Palette, ClipboardList, PenTool } from 'lucide-react';
+import { X, Save, Truck, Hash, Calendar, Palette, ClipboardList, PenTool, Upload, Trash2, FileText } from 'lucide-react';
 import { Button } from './ui/Button';
 
 export const TruckForm = ({ truck, onSave, onCancel }) => {
@@ -7,16 +7,61 @@ export const TruckForm = ({ truck, onSave, onCancel }) => {
     year: truck?.year || '',
     make: truck?.make || '',
     model: truck?.model || '',
+    truckType: truck?.truckType || '',
+    weight: truck?.weight || '',
     vin: truck?.vin || '',
     licensePlate: truck?.licensePlate || '',
     color: truck?.color || '',
     status: truck?.status || 'Active',
-    notes: truck?.notes || ''
+    notes: truck?.notes || '',
+    attachments: truck?.attachments || []
   });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const readFileAsDataURL = (file) => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve({
+      data: reader.result,
+      type: file.type,
+      name: file.name,
+      size: file.size
+    });
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+  const handleFileChange = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    const maxSize = 50 * 1024 * 1024;
+    const validFiles = files.filter(file => {
+      if (file.size > maxSize) {
+        alert(`${file.name} is too large. Please select files under 50MB.`);
+        return false;
+      }
+      return true;
+    });
+
+    if (!validFiles.length) return;
+
+    const newAttachments = await Promise.all(validFiles.map(readFileAsDataURL));
+    setFormData(prev => ({
+      ...prev,
+      attachments: [...(prev.attachments || []), ...newAttachments]
+    }));
+    e.target.value = null;
+  };
+
+  const removeAttachment = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      attachments: (prev.attachments || []).filter((_, i) => i !== index)
+    }));
   };
 
   const handleSubmit = (e) => {
@@ -97,6 +142,34 @@ export const TruckForm = ({ truck, onSave, onCancel }) => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
+                  <label className={labelClasses}>Truck Type</label>
+                  <div className="relative">
+                    <Truck className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input
+                      name="truckType"
+                      value={formData.truckType}
+                      onChange={handleChange}
+                      placeholder="e.g. Dump, Flatbed, Crane"
+                      className={`${inputClasses} pl-12`}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className={labelClasses}>Weight</label>
+                  <div className="relative">
+                    <Hash className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input
+                      name="weight"
+                      value={formData.weight}
+                      onChange={handleChange}
+                      placeholder="e.g. 26,000 lbs"
+                      className={`${inputClasses} pl-12`}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
                   <label className={labelClasses}>License Plate</label>
                   <div className="relative">
                     <Hash className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
@@ -138,6 +211,41 @@ export const TruckForm = ({ truck, onSave, onCancel }) => {
                     placeholder="17-Digit VIN"
                     className={`${inputClasses} pl-12 uppercase font-mono`}
                   />
+                </div>
+              </div>
+
+              <div>
+                <label className={labelClasses}>Upload Files / Pictures</label>
+                <div className="space-y-3">
+                  <label className="inline-flex items-center gap-2 rounded-2xl border border-slate-300 dark:border-white/10 bg-slate-100 dark:bg-slate-900/50 px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-200 cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-800 transition">
+                    <Upload size={16} />
+                    Choose files
+                    <input
+                      type="file"
+                      multiple
+                      className="hidden"
+                      onChange={handleFileChange}
+                    />
+                  </label>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Upload documents or vehicle pictures. Max 50MB per file.</p>
+                  {formData.attachments?.length > 0 && (
+                    <div className="space-y-2">
+                      {formData.attachments.map((attachment, index) => (
+                        <div key={index} className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 px-3 py-2 text-sm">
+                          <div className="flex items-center gap-2 overflow-hidden">
+                            <FileText className="text-slate-500" size={16} />
+                            <div className="min-w-0">
+                              <div className="truncate font-medium text-slate-900 dark:text-white">{attachment.name}</div>
+                              <div className="truncate text-[11px] text-slate-500 dark:text-slate-400">{Math.round(attachment.size / 1024)} KB</div>
+                            </div>
+                          </div>
+                          <button type="button" onClick={() => removeAttachment(index)} className="text-slate-500 hover:text-red-500">
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
