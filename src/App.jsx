@@ -88,7 +88,7 @@ function App() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [permitsRes, contractorsRes, vendorsRes, trucksRes, maintenanceRes, clientsRes, employeesRes] = await Promise.all([
+        const [permitsRes, contractorsRes, vendorsRes, trucksRes, maintenanceRes, clientsRes, employeesRes, proposalsRes] = await Promise.all([
           fetch('/api/permits'),
           fetch('/api/contractors'),
           fetch('/api/vendors'),

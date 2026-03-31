@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef, useState as useLocalState } from "react";
 import { 
   LOGO_WIDE, 
   LOGO_CIRCLE, 
@@ -34,6 +34,18 @@ const handleEnter = (e) => {
     const index = inputs.indexOf(e.target);
     if (index !== -1 && index < inputs.length - 1) {
       inputs[index + 1].focus();
+    }
+  }
+};
+
+// Description-field Enter: jump to NEXT ROW's description (not the amount on same row)
+const handleDescriptionEnter = (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    const descInputs = Array.from(document.querySelectorAll('.main-content input[data-field="description"]'));
+    const index = descInputs.indexOf(e.target);
+    if (index !== -1 && index < descInputs.length - 1) {
+      descInputs[index + 1].focus();
     }
   }
 };
@@ -146,7 +158,7 @@ export function LineItemsTable({ doc, updateLineItem, addLineItem, removeLineIte
             {doc.lineItems.map((item, idx) => (
               <tr key={item.id} className="border-b border-stone-100 hover:bg-stone-50/50 transition-colors group">
                 <td className="py-2 px-3"><input className="w-full bg-transparent outline-none text-stone-500 text-xs focus:text-stone-800" value={item.item} onChange={e => updateLineItem(item.id, "item", e.target.value)} onKeyDown={handleEnter} placeholder={String(idx + 1)} /></td>
-                <td className="py-2 px-3"><input className="w-full bg-transparent outline-none text-stone-700 focus:text-stone-900" value={item.description} onChange={e => updateLineItem(item.id, "description", e.target.value)} onKeyDown={handleEnter} placeholder="Item description" /></td>
+                <td className="py-2 px-3"><input data-field="description" className="w-full bg-transparent outline-none text-stone-700 focus:text-stone-900" value={item.description} onChange={e => updateLineItem(item.id, "description", e.target.value)} onKeyDown={handleDescriptionEnter} placeholder="Item description" /></td>
                 <td className="py-2 px-3 text-right"><input type="number" className="w-full bg-transparent outline-none text-stone-700 text-right focus:text-stone-900" value={item.amount || ""} onChange={e => updateLineItem(item.id, "amount", parseFloat(e.target.value) || 0)} onKeyDown={handleEnter} placeholder="0" /></td>
                 {showProgress && (
                   <>
@@ -280,6 +292,71 @@ export function TermsPage({ company = COMPANY }) {
 export function DocumentForm({ type, company = COMPANY }) {
   const { doc, update, updateClient, updateLineItem, addLineItem, removeLineItem, reset } = useDocumentState(type, company);
   const isTerms = type === "terms";
+  const printRef = useRef(null);
+  const [isDownloading, setIsDownloading] = useLocalState(false);
+
+  const handleDownloadPDF = async () => {
+    if (!printRef.current || isDownloading) return;
+    setIsDownloading(true);
+    try {
+      // Dynamic imports — these libraries work fine with oklch since the
+      // browser's own rendering engine handles all CSS via SVG foreignObject
+      const { toPng } = await import("html-to-image");
+      const { default: jsPDF } = await import("jspdf");
+
+      const element = printRef.current;
+
+      // Build filename from document metadata
+      const docLabel = DOC_LABELS[type] || type;
+      const clientName = doc.billTo?.name?.trim();
+      const docNumber = doc.number?.trim();
+      const parts = ["Loza_Concrete", docLabel.replace(/\s+/g, "_")];
+      if (clientName) parts.push(clientName.replace(/\s+/g, "_"));
+      if (docNumber) parts.push(docNumber);
+      const filename = parts.join("_") + ".pdf";
+
+      // Render the element to a high-res PNG (browser handles oklch natively)
+      const dataUrl = await toPng(element, {
+        quality: 1,
+        pixelRatio: 2,
+        cacheBust: true,
+        skipAutoScale: true,
+        backgroundColor: "#ffffff",
+      });
+
+      // Get element dimensions to calculate PDF page layout
+      const elRect = element.getBoundingClientRect();
+      const pxToIn = 1 / 96; // CSS px to inches
+      const contentW = elRect.width * pxToIn;
+      const contentH = elRect.height * pxToIn;
+
+      // Letter page with margins
+      const pageW = 8.5;
+      const pageH = 11;
+      const margin = 0.4;
+      const printW = pageW - margin * 2;
+      const scale = printW / contentW;
+      const printH = contentH * scale;
+
+      // Create PDF, adding pages as needed
+      const pdf = new jsPDF({ unit: "in", format: "letter", orientation: "portrait" });
+      const totalPages = Math.ceil((printH + margin) / pageH);
+
+      for (let page = 0; page < totalPages; page++) {
+        if (page > 0) pdf.addPage();
+        // Offset the image upward for subsequent pages
+        const yOffset = margin - page * (pageH - margin);
+        pdf.addImage(dataUrl, "PNG", margin, yOffset, printW, printH);
+      }
+
+      pdf.save(filename);
+    } catch (err) {
+      console.error("PDF generation failed:", err);
+      alert("PDF download failed: " + err.message);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   return (
     <div>
@@ -292,21 +369,36 @@ export function DocumentForm({ type, company = COMPANY }) {
           {!isTerms && <button onClick={reset} className="text-xs text-stone-400 hover:text-stone-700 transition-colors px-3 py-1.5 border border-stone-200 rounded-lg">Clear</button>}
           <button onClick={() => window.print()} className="text-xs text-white bg-stone-600 hover:bg-stone-700 transition-colors px-4 py-1.5 rounded-lg font-medium flex items-center gap-2">
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
-            Print / Save PDF
+            Print
+          </button>
+          <button onClick={handleDownloadPDF} disabled={isDownloading} className="text-xs text-white bg-stone-600 hover:bg-stone-700 disabled:bg-stone-400 transition-colors px-4 py-1.5 rounded-lg font-medium flex items-center gap-2">
+            {isDownloading ? (
+              <>
+                <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                Generating…
+              </>
+            ) : (
+              <>
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                Download PDF
+              </>
+            )}
           </button>
         </div>
       </div>
 
-      <CompanyBanner company={company} />
-      {!isTerms && <DocumentHeader doc={doc} update={update} />}
-      {!isTerms && <ClientSection doc={doc} updateClient={updateClient} />}
-      {isTerms ? <TermsPage company={company} /> : (
-        <>
-          <LineItemsTable doc={doc} updateLineItem={updateLineItem} addLineItem={addLineItem} removeLineItem={removeLineItem} />
-          <TotalsPanel doc={doc} update={update} />
-          <ProposalFooter doc={doc} company={company} />
-        </>
-      )}
+      <div ref={printRef}>
+        <CompanyBanner company={company} />
+        {!isTerms && <DocumentHeader doc={doc} update={update} />}
+        {!isTerms && <ClientSection doc={doc} updateClient={updateClient} />}
+        {isTerms ? <TermsPage company={company} /> : (
+          <>
+            <LineItemsTable doc={doc} updateLineItem={updateLineItem} addLineItem={addLineItem} removeLineItem={removeLineItem} />
+            <TotalsPanel doc={doc} update={update} />
+            <ProposalFooter doc={doc} company={company} />
+          </>
+        )}
+      </div>
     </div>
   );
 }
