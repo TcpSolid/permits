@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Save, User, Phone, Mail, MapPin, Briefcase, Building2, ClipboardList, Shield } from 'lucide-react';
+import { X, Save, User, Phone, Mail, MapPin, Briefcase, Building2, ClipboardList, Shield, Upload, Trash2, FileText } from 'lucide-react';
 import { Button } from './ui/Button';
 
 export const ClientForm = ({ client, onSave, onCancel }) => {
@@ -10,12 +10,55 @@ export const ClientForm = ({ client, onSave, onCancel }) => {
     email: client?.email || '',
     address: client?.address || '',
     category: client?.category || 'Residential',
-    notes: client?.notes || ''
+    notes: client?.notes || '',
+    attachments: client?.attachments || []
   });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const readFileAsDataURL = (file) => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve({
+      data: reader.result,
+      type: file.type,
+      name: file.name,
+      size: file.size
+    });
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+  const handleFileChange = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    const maxSize = 50 * 1024 * 1024;
+    const validFiles = files.filter(file => {
+      if (file.size > maxSize) {
+        alert(`${file.name} is too large. Please select files under 50MB.`);
+        return false;
+      }
+      return true;
+    });
+
+    if (!validFiles.length) return;
+
+    const newAttachments = await Promise.all(validFiles.map(readFileAsDataURL));
+    setFormData(prev => ({
+      ...prev,
+      attachments: [...(prev.attachments || []), ...newAttachments]
+    }));
+    e.target.value = null;
+  };
+
+  const removeAttachment = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      attachments: (prev.attachments || []).filter((_, i) => i !== index)
+    }));
   };
 
   const handleSubmit = (e) => {
@@ -154,6 +197,56 @@ export const ClientForm = ({ client, onSave, onCancel }) => {
                     placeholder="Project preferences, key contacts, account info..."
                     className={`${inputClasses} pl-12 min-h-[100px] resize-none`}
                   />
+                </div>
+              </div>
+
+              <div>
+                <label className={labelClasses}>Upload Documents & Pictures</label>
+                <div className="space-y-3">
+                  <label className="block rounded-3xl border-2 border-dashed border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-slate-900/50 p-5 text-center cursor-pointer transition hover:border-primary-500">
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*,application/pdf"
+                      className="sr-only"
+                      onChange={handleFileChange}
+                    />
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <Upload size={26} className="text-primary-500" />
+                      <p className="text-sm font-semibold text-slate-800 dark:text-white">Click to add pictures or documents</p>
+                      <p className="text-xs text-slate-500">Images and PDF files only. Max 50MB each.</p>
+                    </div>
+                  </label>
+
+                  {formData.attachments?.length > 0 && (
+                    <div className="space-y-3">
+                      {formData.attachments.map((attachment, index) => (
+                        <div
+                          key={`${attachment.name}-${index}`}
+                          className="flex items-center gap-3 p-3 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950"
+                        >
+                          {attachment.type.startsWith('image/') ? (
+                            <img src={attachment.data} alt={attachment.name} className="w-16 h-16 rounded-xl object-cover" />
+                          ) : (
+                            <div className="w-16 h-16 rounded-xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center text-slate-500">
+                              <FileText size={20} />
+                            </div>
+                          )}
+                          <div className="min-w-0 overflow-hidden">
+                            <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{attachment.name}</p>
+                            <p className="text-xs text-slate-500 truncate">{attachment.type}</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeAttachment(index)}
+                            className="ml-auto text-slate-400 hover:text-red-500 transition"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

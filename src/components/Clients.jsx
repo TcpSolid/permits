@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Users, Search, Plus, Edit, Phone, Mail, MapPin, Briefcase, ExternalLink, User, Building2 } from 'lucide-react';
+import { Users, Search, Plus, Edit, Phone, Mail, MapPin, Briefcase, ExternalLink, User, Building2, FileText } from 'lucide-react';
 import { Button } from './ui/Button';
 
 export const Clients = ({ clients, onRegisterClient, onEditClient }) => {
@@ -97,6 +97,12 @@ export const Clients = ({ clients, onRegisterClient, onEditClient }) => {
                   <div className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-400">
                     <MapPin size={14} className="text-slate-400 shrink-0 mt-0.5" />
                     <span className="line-clamp-2">{client.address}</span>
+                  </div>
+                )}
+                {client.attachments?.length > 0 && (
+                  <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+                    <FileText size={14} className="text-slate-400" />
+                    <span>{client.attachments.length} Attachment{client.attachments.length !== 1 ? 's' : ''}</span>
                   </div>
                 )}
               </div>
