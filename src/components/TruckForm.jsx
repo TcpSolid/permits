@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Save, Truck, Hash, Calendar, Palette, ClipboardList, PenTool, Upload, Trash2, FileText } from 'lucide-react';
+import { X, Save, Truck, Hash, Calendar, Palette, ClipboardList, PenTool, Upload, Trash2, FileText, DollarSign } from 'lucide-react';
 import { Button } from './ui/Button';
 
 export const TruckForm = ({ truck, onSave, onCancel }) => {
@@ -10,6 +10,7 @@ export const TruckForm = ({ truck, onSave, onCancel }) => {
     truckType: truck?.truckType || '',
     weight: truck?.weight || '',
     vin: truck?.vin || '',
+    value: truck?.value || '',
     licensePlate: truck?.licensePlate || '',
     color: truck?.color || '',
     status: truck?.status || 'Active',
@@ -210,6 +211,23 @@ export const TruckForm = ({ truck, onSave, onCancel }) => {
                     onChange={handleChange}
                     placeholder="17-Digit VIN"
                     className={`${inputClasses} pl-12 uppercase font-mono`}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className={labelClasses}>Truck Value</label>
+                <div className="relative">
+                  <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                  <input
+                    name="value"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.value}
+                    onChange={handleChange}
+                    placeholder="e.g. 25000"
+                    className={`${inputClasses} pl-12`}
                   />
                 </div>
               </div>
